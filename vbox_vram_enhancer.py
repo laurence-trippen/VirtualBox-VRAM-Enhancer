@@ -4,12 +4,6 @@ from shutil import which
 import subprocess
 
 
-class VBox:
-  def __init__(self, name, vram):
-    self.name = name
-    self.vram = vram
-
-
 class VBoxManage:
   version = ''
   executable = 'VBoxManage'
@@ -23,7 +17,7 @@ class VBoxManage:
     return which(VBoxManage.executable) is not None
 
   def get_version(self):
-    return subprocess.run([VBoxManage.executable, '--version'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+    return subprocess.run([VBoxManage.executable, '--version'], stdout=subprocess.PIPE).stdout.decode('utf-8').strip()
 
   def get_vms(self, only_running_vms=False, as_string=False, use_formatter=True):
     command = None
@@ -75,7 +69,8 @@ class VBoxManage:
 
 class UI:
   def __init__(self):
-    pass
+    self.vbox = VBoxManage()
+    self.vms = self.vbox.get_offline_vms()
 
   def on_save(self):
     vm = self.selected_vm.get()
@@ -87,14 +82,14 @@ class UI:
     self.vram_slider.set(self.vbox.get_vram_by_vm(vm))
 
   def show(self):
-    self.vbox = VBoxManage()
-    self.vms = self.vbox.get_offline_vms()
-
     self.root = Tk()
     self.root.title('VirtualBox VRAM Enhancer')
+    self.root.geometry('320x200')
+    self.root.columnconfigure(0, weight=1)
+    self.root.rowconfigure(0, weight=1)
 
-    self.frame = LabelFrame(self.root, text="Options", padx=20, pady=10)
-    self.frame.grid(padx=10, pady=10, sticky=(N, S, E, W))
+    self.frame = LabelFrame(self.root, text='Options', padx=20, pady=10)
+    self.frame.grid(padx=10, pady=10, sticky=N+S+E+W)
 
     self.vms_label = Label(self.frame, text='VMs:')
     self.vms_label.grid(row=0, sticky=(W))
@@ -106,8 +101,8 @@ class UI:
     self.vms_dropdown = OptionMenu(self.frame, self.selected_vm, *self.vms)
     self.vms_dropdown.grid(row=0, column=1, sticky=(E))
 
-    self.vram_label = Label(self.frame, text='VRAM (MB):')
-    self.vram_label.grid(row=1, sticky=(W))
+    self.vram_label = Label(self.frame, text='VRAM (MB):', pady=10)
+    self.vram_label.grid(row=1, sticky=(W), pady=(10, 10))
 
     self.vram_slider = Scale(self.frame, from_=12, to=256, orient=HORIZONTAL)
     self.vram_slider.set(self.vbox.get_vram_by_vm(self.vms[0]))
@@ -116,9 +111,16 @@ class UI:
     self.save_button = Button(self.frame, text='Save', command=self.on_save)
     self.save_button.grid(row=2, column=1, sticky=(E))
 
+    self.statusbar = Label(self.root, text='VirtualBox ' + self.vbox.version, bd=1, relief=SUNKEN)
+    self.statusbar.grid(columnspan=2, sticky=(W, S, E))
+
     self.root.mainloop()
 
 
-if __name__ == "__main__":
+def main():
   ui = UI()
   ui.show()
+
+
+if __name__ == '__main__':
+  main()
