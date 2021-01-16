@@ -1,30 +1,67 @@
 from tkinter import *
+from tkinter import filedialog
+from tkinter import messagebox
 from shutil import which
+from pathlib import Path
 
+import os
 import subprocess
+import json
+
+
+class Config():
+  virtualbox_path = ''
+  directory = os.path.join(str(Path.home()), 'VBoxVRAMEnhancer')
+  path = os.path.join(directory, 'config.json')
+
+  @staticmethod
+  def check():
+    existed = True
+
+    if not os.path.exists(Config.directory):
+      os.makedirs(Config.directory)
+      existed = False
+
+    if not os.path.isfile(Config.path):
+      data = {
+        'virtualbox_path': ''
+      }
+      Config.save(data)
+      existed = False
+    
+    return existed
+
+  @staticmethod
+  def save(data):
+    with open(Config.path, "w") as outfile:
+      json.dump(data, outfile, indent=4)
+
+  @staticmethod
+  def load():
+    with open(Config.path) as json_file:
+      data = json.load(json_file)
+      Config.virtualbox_path = data['virtualbox_path']
 
 
 class VBoxManage:
-  version = ''
-  executable = 'VBoxManage'
-  is_available = False
+  path = ''
+  executable = 'VBoxManage.exe'
 
   def __init__(self):
-    VBoxManage.version = self.get_version()
-    VBoxManage.is_available = self.check_vbox()
+    pass
 
-  def check_vbox(self):
-    return which(VBoxManage.executable) is not None
+  def is_available(self):
+    return which(os.path.join(VBoxManage.path)) is not None
 
   def get_version(self):
-    return subprocess.run([VBoxManage.executable, '--version'], stdout=subprocess.PIPE).stdout.decode('utf-8').strip()
+    return subprocess.run([VBoxManage.path, '--version'], stdout=subprocess.PIPE).stdout.decode('utf-8').strip()
 
   def get_vms(self, only_running_vms=False, as_string=False, use_formatter=True):
     command = None
     if only_running_vms:
-      command = [VBoxManage.executable, 'list', 'runningvms']
+      command = [VBoxManage.path, 'list', 'runningvms']
     else:
-      command = [VBoxManage.executable, 'list', 'vms']
+      command = [VBoxManage.path, 'list', 'vms']
     result = subprocess.run(command, stdout=subprocess.PIPE)
     if as_string == True:
       return result.stdout.decode('utf-8')
@@ -56,10 +93,10 @@ class VBoxManage:
 
   def modify_vram(self, vm, vram):
     if vram >= 12 and vram <= 256:
-      subprocess.run([VBoxManage.executable, 'modifyvm', vm, '--vram', str(vram)])
+      subprocess.run([VBoxManage.path, 'modifyvm', vm, '--vram', str(vram)])
 
   def get_vram_by_vm(self, vm):
-    result = subprocess.run([VBoxManage.executable, 'showvminfo', vm], stdout=subprocess.PIPE)
+    result = subprocess.run([VBoxManage.path, 'showvminfo', vm], stdout=subprocess.PIPE)
     output_lines = result.stdout.decode('utf-8').splitlines()
     for line in output_lines:
       if 'VRAM size:' in line:
@@ -67,28 +104,14 @@ class VBoxManage:
         return int(vram)
 
 
-class UI:
-  def __init__(self):
+class TkApp(Frame):
+  def __init__(self, master=None):
+    Frame.__init__(self, master)
     self.vbox = VBoxManage()
+    self.check_vbox_path()
     self.vms = self.vbox.get_offline_vms()
 
-  def on_save(self):
-    vm = self.selected_vm.get()
-    vram = self.vram_slider.get()
-    self.vbox.modify_vram(vm, vram)
-
-  def on_vm_changed(self, *args):
-    vm = self.selected_vm.get()
-    self.vram_slider.set(self.vbox.get_vram_by_vm(vm))
-
-  def show(self):
-    self.root = Tk()
-    self.root.title('VirtualBox VRAM Enhancer')
-    self.root.geometry('320x200')
-    self.root.columnconfigure(0, weight=1)
-    self.root.rowconfigure(0, weight=1)
-
-    self.frame = LabelFrame(self.root, text='Options', padx=20, pady=10)
+    self.frame = LabelFrame(master, text='Options', padx=20, pady=10)
     self.frame.grid(padx=10, pady=10, sticky=N+S+E+W)
 
     self.vms_label = Label(self.frame, text='VMs:')
@@ -111,15 +134,48 @@ class UI:
     self.save_button = Button(self.frame, text='Save', command=self.on_save)
     self.save_button.grid(row=2, column=1, sticky=(E))
 
-    self.statusbar = Label(self.root, text='VirtualBox ' + self.vbox.version, bd=1, relief=SUNKEN)
+    self.statusbar = Label(master, text='VirtualBox ' + self.vbox.get_version(), bd=1, relief=SUNKEN)
     self.statusbar.grid(columnspan=2, sticky=(W, S, E))
+      
+  def check_vbox_path(self, save_if_available=False):
+    if self.vbox.is_available():
+      if save_if_available:
+        Config.save({ 'virtualbox_path': VBoxManage.path })
+    else:
+      should_vbox_set = messagebox.askokcancel('VirtualBox not found.','Please choose the VirtualBox Directory')
+      
+      if should_vbox_set: 
+        VBoxManage.path = filedialog.askdirectory(title="Choose VirtualBox Directory")
+        VBoxManage.path += os.sep + VBoxManage.executable
 
-    self.root.mainloop()
+        self.check_vbox_path(save_if_available=True)
+      else:
+        self.destroy()
+        exit()
+
+  def on_save(self):
+    vm = self.selected_vm.get()
+    vram = self.vram_slider.get()
+    self.vbox.modify_vram(vm, vram)
+
+  def on_vm_changed(self, *args):
+    vm = self.selected_vm.get()
+    self.vram_slider.set(self.vbox.get_vram_by_vm(vm))
 
 
 def main():
-  ui = UI()
-  ui.show()
+  config_exists = Config.check()
+  if config_exists:
+    Config.load()
+    VBoxManage.path = Config.virtualbox_path
+
+  root = Tk()
+  root.title('VirtualBox VRAM Enhancer')
+  root.geometry('320x200')
+  root.columnconfigure(0, weight=1)
+  root.rowconfigure(0, weight=1)
+  app = TkApp(master=root)
+  app.mainloop()
 
 
 if __name__ == '__main__':
