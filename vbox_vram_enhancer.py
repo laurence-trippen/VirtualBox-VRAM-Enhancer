@@ -1,3 +1,11 @@
+# Encoding: UTF-8
+# Author: Laurence Trippen
+# Date: 16.01.2021
+# E-Mail: laurence.trippen@gmail.com
+# GitHub: https://github.com/laurence-trippen
+# Website: https://www.smartelephantapps.com
+# Program: VirtualBox VRAM Enhancer
+
 from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
@@ -144,7 +152,7 @@ class TkApp(Frame):
     else:
       should_vbox_set = messagebox.askokcancel('VirtualBox not found.','Please choose the VirtualBox Directory')
       
-      if should_vbox_set: 
+      if should_vbox_set:
         VBoxManage.path = filedialog.askdirectory(title="Choose VirtualBox Directory")
         VBoxManage.path += os.sep + VBoxManage.executable
 
@@ -163,6 +171,20 @@ class TkApp(Frame):
     self.vram_slider.set(self.vbox.get_vram_by_vm(vm))
 
 
+def change_vbox_path():
+  result = filedialog.askdirectory(title="Choose VirtualBox Directory")
+  if result == '':
+    return
+  else:
+    VBoxManage.path = result
+    VBoxManage.path += os.sep + VBoxManage.executable
+
+    if which(os.path.join(VBoxManage.path)) is None:
+      change_vbox_path()
+    else:
+      Config.save({ 'virtualbox_path': VBoxManage.path })
+
+
 def main():
   config_exists = Config.check()
   if config_exists:
@@ -174,7 +196,16 @@ def main():
   root.geometry('320x200')
   root.columnconfigure(0, weight=1)
   root.rowconfigure(0, weight=1)
+
   app = TkApp(master=root)
+
+  menubar = Menu(root)
+  filemenu = Menu(menubar, tearoff=False)
+  filemenu.add_command(label='Change VirtualBox Path', command=change_vbox_path)
+  menubar.add_cascade(label='Settings', menu=filemenu)
+
+  root.config(menu=menubar)
+
   app.mainloop()
 
 
