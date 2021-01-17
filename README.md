@@ -1,8 +1,8 @@
 # VirtualBox VRAM Enhancer
-A user interface to configure the VRAM for a VBox **larger than 128MB**.
+A user interface to configure the VRAM for a VM **larger than 128MB**.
 
 ## Usage
-No additional python-modules required. Just run the Python-File with:
+No additional Python-Modules required. Just run the Python-File with:
 
 ```
 $ python vbox_vram_enhancer.py
