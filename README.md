@@ -14,4 +14,5 @@ $ python vbox_vram_enhancer.py
 Tested the version also with the brilliant [pyqver](https://github.com/ghewgill/pyqver) tool.
 
 ## Preview
-![](https://github.com/laurence-trippen/VirtualBox-VRAM-Enhancer/blob/master/Preview/vboxvramenhancer_preview.png?raw=true)
+![](https://github.com/laurence-trippen/VirtualBox-VRAM-Enhancer/blob/master/Preview/vboxvramenhancer_preview_windows.png?raw=true)
+![](https://github.com/laurence-trippen/VirtualBox-VRAM-Enhancer/blob/master/Preview/vboxvramenhancer_preview_macos.png?raw=true)
