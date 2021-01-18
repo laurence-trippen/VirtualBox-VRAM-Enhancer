@@ -8,6 +8,13 @@ No additional Python-Modules required. Just run the Python-File with:
 $ python vbox_vram_enhancer.py
 ```
 
+Or on some Linux and macOS systems where Python is preinstalled:
+
+
+```
+$ python3 vbox_vram_enhancer.py
+```
+
 ### Minimum Python Version
 
 **Python 3.3** because of the [shutil.which()](https://docs.python.org/3.9/library/shutil.html) function.<br/>
