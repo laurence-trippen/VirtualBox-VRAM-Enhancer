@@ -16,3 +16,4 @@ Tested the version also with the brilliant [pyqver](https://github.com/ghewgill/
 ## Preview
 ![](https://github.com/laurence-trippen/VirtualBox-VRAM-Enhancer/blob/master/Preview/vboxvramenhancer_preview_windows.png?raw=true)
 ![](https://github.com/laurence-trippen/VirtualBox-VRAM-Enhancer/blob/master/Preview/vboxvramenhancer_preview_macos.png?raw=true)
+![](https://github.com/laurence-trippen/VirtualBox-VRAM-Enhancer/blob/master/Preview/vboxvramenhancer_preview_macos_2.png?raw=true)
