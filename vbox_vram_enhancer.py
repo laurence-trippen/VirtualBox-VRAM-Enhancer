@@ -13,9 +13,16 @@ from shutil import which
 from pathlib import Path
 
 import os
+import platform
 import subprocess
 import json
 
+
+# System Check
+WINDOWS = 'Windows'
+MACOS = 'Darwin'
+LINUX = 'Linux'
+CURRENT_OS = platform.system()
 
 class Config():
   virtualbox_path = ''
@@ -53,10 +60,13 @@ class Config():
 
 class VBoxManage:
   path = ''
-  executable = 'VBoxManage.exe'
+  executable = 'VBoxManage.exe' if CURRENT_OS == WINDOWS else 'VBoxManage'
 
   def __init__(self):
     pass
+
+  def is_global_available(self):
+    return which(VBoxManage.executable) is not None
 
   def is_available(self):
     return which(os.path.join(VBoxManage.path)) is not None
@@ -146,20 +156,23 @@ class TkApp(Frame):
     self.statusbar.grid(columnspan=2, sticky=(W, S, E))
       
   def check_vbox_path(self, save_if_available=False):
-    if self.vbox.is_available():
-      if save_if_available:
-        Config.save({ 'virtualbox_path': VBoxManage.path })
+    if self.vbox.is_global_available():
+      VBoxManage.path = VBoxManage.executable
     else:
-      should_vbox_set = messagebox.askokcancel('VirtualBox not found.','Please choose the VirtualBox Directory')
-      
-      if should_vbox_set:
-        VBoxManage.path = filedialog.askdirectory(title="Choose VirtualBox Directory")
-        VBoxManage.path += os.sep + VBoxManage.executable
-
-        self.check_vbox_path(save_if_available=True)
+      if self.vbox.is_available():
+        if save_if_available:
+          Config.save({ 'virtualbox_path': VBoxManage.path })
       else:
-        self.destroy()
-        exit()
+        should_vbox_set = messagebox.askokcancel('VirtualBox not found.','Please choose the VirtualBox Directory')
+        
+        if should_vbox_set:
+          VBoxManage.path = filedialog.askdirectory(title="Choose VirtualBox Directory")
+          VBoxManage.path += os.sep + VBoxManage.executable
+
+          self.check_vbox_path(save_if_available=True)
+        else:
+          self.destroy()
+          exit()
 
   def on_save(self):
     vm = self.selected_vm.get()
